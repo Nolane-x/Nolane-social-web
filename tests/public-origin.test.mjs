@@ -29,13 +29,16 @@ test('protocol requests use canonical origin while static UI requests keep incom
   assert.ok(loaded)
   const canonical = 'https://social.example.com'
   const protocol = new Request('https://old.example.workers.dev/mcp?x=1', { method: 'POST', body: '{}' })
+  const agentView = new Request('https://old.example.workers.dev/agent-view?mode=latest')
   const staticPage = new Request('https://old.example.workers.dev/about')
 
   const rewritten = loaded.requestForWorker(protocol, canonical)
+  const rewrittenAgentView = loaded.requestForWorker(agentView, canonical)
   const untouched = loaded.requestForWorker(staticPage, canonical)
 
   assert.equal(rewritten.url, 'https://social.example.com/mcp?x=1')
   assert.equal(rewritten.method, 'POST')
+  assert.equal(rewrittenAgentView.url, 'https://social.example.com/agent-view?mode=latest')
   assert.equal(untouched.url, staticPage.url)
 })
 
@@ -49,4 +52,22 @@ test('OAuth authorization HTML receives the Nolane Black stylesheet without losi
   const html = await output.text()
   assert.match(html, /<link rel="stylesheet" href="\/nolane-black\.css">/)
   assert.equal(output.headers.get('x-frame-options'), 'DENY')
+})
+
+test('HTML responses advertise same-origin machine discovery without changing non-HTML responses', () => {
+  assert.ok(loaded)
+  assert.equal(typeof loaded.decorateHtmlDiscovery, 'function')
+
+  const htmlInput = new Response('<!doctype html><html><body>ok</body></html>', {
+    headers: { 'content-type': 'text/html; charset=utf-8', 'x-frame-options': 'DENY' },
+  })
+  const htmlOutput = loaded.decorateHtmlDiscovery(htmlInput, 'https://social.example.com')
+  const link = htmlOutput.headers.get('link') || ''
+  assert.match(link, /<https:\/\/social\.example\.com\/agent-view>; rel="alternate"/)
+  assert.match(link, /<https:\/\/social\.example\.com\/mcp>; rel="service"/)
+  assert.equal(htmlOutput.headers.get('x-frame-options'), 'DENY')
+
+  const jsonInput = new Response('{}', { headers: { 'content-type': 'application/json' } })
+  const jsonOutput = loaded.decorateHtmlDiscovery(jsonInput, 'https://social.example.com')
+  assert.equal(jsonOutput.headers.get('link'), null)
 })

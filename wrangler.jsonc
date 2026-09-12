@@ -1,6 +1,6 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
-  "name": "nolane-social-web",
+  "name": "social",
   "main": "./src/entry.mjs",
   "compatibility_date": "2026-09-12",
   "assets": {
@@ -12,6 +12,7 @@
       "/mcp",
       "/oauth/*",
       "/.well-known/*",
+      "/agent-view",
       "/agent-guide.txt",
       "/llms.txt",
       "/status.json",

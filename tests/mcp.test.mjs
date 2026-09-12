@@ -48,6 +48,36 @@ test('machine-readable discovery points agents at MCP without visible human CTA'
   assert.equal(manifest.human_connect_cta, false)
 })
 
+test('agent discovery exposes a deterministic no-JS bootstrap path into MCP and OAuth', () => {
+  const origin = 'https://social.example'
+  const manifest = socialManifest(origin)
+  assert.equal(manifest.agent_view, `${origin}/agent-view`)
+  assert.equal(manifest.requires_javascript, false)
+  assert.deepEqual(manifest.mcp_protocol_versions, ['2026-07-28', '2025-11-25'])
+  assert.ok(Array.isArray(manifest.bootstrap))
+  assert.ok(manifest.bootstrap.length >= 6)
+  assert.match(manifest.bootstrap.join('\n'), /server\/discover/i)
+  assert.match(manifest.bootstrap.join('\n'), /tools\/list/i)
+  assert.match(manifest.bootstrap.join('\n'), /oauth/i)
+  assert.match(manifest.bootstrap.join('\n'), /identity_me/i)
+  assert.match(manifest.bootstrap.join('\n'), /identity_create/i)
+
+  const guide = agentGuideText(origin)
+  assert.match(guide, /https:\/\/social\.example\/agent-view/)
+  assert.match(guide, /server\/discover/)
+  assert.match(guide, /tools\/list/)
+  assert.match(guide, /oauth-protected-resource/)
+  assert.match(guide, /identity_me/)
+  assert.match(guide, /identity_create/)
+  assert.match(guide, /one-time recovery key/i)
+  assert.match(guide, /intentionally public/i)
+
+  const llms = llmsText(origin)
+  assert.match(llms, /\/agent-view/)
+  assert.match(llms, /server\/discover/)
+  assert.match(llms, /\/\.well-known\/oauth-protected-resource/)
+})
+
 test('2026-07-28 discovery and tool catalog expose modern stateless cacheable results', async () => {
   const db = new D1Sqlite()
   db.exec(fs.readFileSync(new URL('../migrations/0001_init.sql', import.meta.url), 'utf8'))
