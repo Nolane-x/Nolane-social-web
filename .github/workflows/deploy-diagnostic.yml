@@ -1,0 +1,29 @@
+name: Deploy Readiness Diagnostic
+
+on:
+  push:
+    branches: [ops/deploy-diagnostic]
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      TOKEN_HASH_PEPPER: ${{ secrets.TOKEN_HASH_PEPPER }}
+      ADMIN_SECRET: ${{ secrets.ADMIN_SECRET }}
+    steps:
+      - name: Report presence only
+        shell: bash
+        run: |
+          for name in CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID TOKEN_HASH_PEPPER ADMIN_SECRET; do
+            if [ -n "${!name}" ]; then
+              echo "$name=SET"
+            else
+              echo "$name=UNSET"
+            fi
+          done
