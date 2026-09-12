@@ -1,0 +1,8 @@
+node_modules/
+.wrangler/
+.dev.vars
+.env
+*.log
+artifacts/ui/*.png
+.DS_Store
+.wrangler.generated.jsonc
