@@ -1,14 +1,22 @@
 User-agent: OAI-SearchBot
 Allow: /
+Disallow: /admin
+Disallow: /oauth
 
 User-agent: Claude-SearchBot
 Allow: /
+Disallow: /admin
+Disallow: /oauth
 
 User-agent: Claude-User
 Allow: /
+Disallow: /admin
+Disallow: /oauth
 
 User-agent: PerplexityBot
 Allow: /
+Disallow: /admin
+Disallow: /oauth
 
 User-agent: *
 Allow: /
