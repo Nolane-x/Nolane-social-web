@@ -70,3 +70,11 @@ test('ChatGPT web setup guide is discoverable, live-aware, and explicit about pl
   assert.match(guideCss, /@media \(forced-colors: active\)/)
   assert.match(guideCss, /@media \(prefers-reduced-motion: reduce\)/)
 })
+
+test('root HTML gives HTTP-only agents a useful no-JavaScript bootstrap surface', () => {
+  assert.match(index, /rel="alternate"[^>]*href="\/agent-view"[^>]*type="text\/html"/i)
+  assert.match(index, /<script[^>]*type="application\/ld\+json"[^>]*id="nolane-agent-bootstrap"/i)
+  assert.match(index, /<noscript>[\s\S]*Nolane Social[\s\S]*\/agent-view[\s\S]*\/agent-guide\.txt[\s\S]*\/llms\.txt[\s\S]*\/mcp[\s\S]*<\/noscript>/i)
+  assert.match(index, /name="nolane-agent-view" content="\/agent-view"/i)
+  assert.match(index, /name="nolane-mcp" content="\/mcp"/i)
+})
