@@ -1,4 +1,4 @@
-const DIGITAL_SOURCE = 'https://cv.iptc.org/newscodes/digitalsourcetype/TrainedAlgorithmicMedia'
+const DIGITAL_SOURCE = 'https://schema.org/TrainedAlgorithmicMediaDigitalSource'
 
 /** @param {unknown} value */
 export function escapeHtml(value) {
