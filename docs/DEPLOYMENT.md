@@ -12,13 +12,15 @@ Authenticate locally with Wrangler when doing first-time setup:
 npx wrangler login
 ```
 
-## 2. Create the D1 database once
+## 2. D1 database resolution
+
+Production CI resolves the database named `nolane-social` through the Cloudflare API on every deploy. If it does not exist, the preflight creates it and captures the returned UUID. The UUID is deployment configuration, not a database password, and does not need to be copied into a GitHub secret.
+
+For manual provisioning you can still run:
 
 ```bash
 npx wrangler d1 create nolane-social
 ```
-
-Wrangler prints a `database_id`. Keep that UUID as deployment configuration; it is not a database password.
 
 The committed `wrangler.jsonc` intentionally contains this placeholder:
 
@@ -26,7 +28,7 @@ The committed `wrangler.jsonc` intentionally contains this placeholder:
 __CLOUDFLARE_D1_DATABASE_ID__
 ```
 
-Production CI replaces it in a generated, ignored config file rather than committing an account-specific ID.
+Production CI replaces it in a generated, ignored config file after resolving the account-specific ID from Cloudflare.
 
 For local commands, generate that config with:
 
@@ -69,25 +71,26 @@ printf '%s' "$ADMIN_SECRET" | npx wrangler secret put ADMIN_SECRET --config .wra
 
 ## 5. GitHub repository secrets
 
-The included deployment workflow expects:
+The included deployment workflow requires only the Cloudflare credentials needed to inspect and deploy account resources:
 
 ```text
 CLOUDFLARE_API_TOKEN
 CLOUDFLARE_ACCOUNT_ID
-CLOUDFLARE_D1_DATABASE_ID
-TOKEN_HASH_PEPPER
-ADMIN_SECRET
 ```
 
-Add them under repository **Settings → Secrets and variables → Actions**. Do not send them through chat, issues, commits, or pull-request text.
+`TOKEN_HASH_PEPPER` and `ADMIN_SECRET` are runtime Worker secrets. They should normally remain configured in Cloudflare. The workflow checks only their remote names and preserves their values. Same-named GitHub Actions secrets are optional bootstrap fallbacks: if a required Worker secret is missing remotely but its GitHub value exists, the deploy uploads only that missing value. If a required secret exists in neither place, deployment fails closed.
+
+`CLOUDFLARE_D1_DATABASE_ID` is not required in GitHub. The preflight resolves or creates the database by the stable name `nolane-social`.
+
+Do not send credential or secret values through chat, issues, commits, or pull-request text.
 
 ## 6. Deployment workflow
 
-`.github/workflows/deploy.yml` runs the verification suite, generates an ephemeral Wrangler config, validates the two required Worker secrets, applies unapplied D1 migrations, then deploys Worker code, Static Assets, and both secrets in one Wrangler deployment using an ephemeral secrets file under `RUNNER_TEMP`. The secret values are never written into the repository workspace or committed.
+`.github/workflows/deploy.yml` runs the verification suite, resolves Cloudflare state, generates an ephemeral Wrangler config, applies unapplied D1 migrations, and deploys the Worker plus Static Assets. Existing remote Worker secrets are left untouched. When a missing secret must be bootstrapped from an optional GitHub Actions secret, only the missing value is written to an ephemeral `RUNNER_TEMP` file and uploaded atomically with the code deployment.
 
 `wrangler.jsonc` declares `TOKEN_HASH_PEPPER` and `ADMIN_SECRET` under `secrets.required`, so a production deploy cannot silently succeed without them. The generated file `.wrangler.generated.jsonc` is ignored by Git.
 
-Push/merge to `main` triggers production deployment once the secrets exist. You can also use the workflow's manual dispatch.
+Push/merge to `main` triggers production deployment once the Cloudflare credentials are available and the required Worker secrets exist remotely or as bootstrap fallbacks. You can also use the workflow's manual dispatch.
 
 ## 7. Smoke checks
 
