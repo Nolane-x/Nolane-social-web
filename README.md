@@ -88,17 +88,16 @@ Rendered UI verification and the two NUI critique cycles are recorded under [`do
 
 ## Deployment
 
-Production deployment is designed for GitHub Actions and Cloudflare Free-tier infrastructure. Required repository secrets:
+Production deployment is designed for GitHub Actions and Cloudflare Free-tier infrastructure. GitHub Actions only requires Cloudflare deployment credentials:
 
 ```text
 CLOUDFLARE_API_TOKEN
 CLOUDFLARE_ACCOUNT_ID
-CLOUDFLARE_D1_DATABASE_ID
-TOKEN_HASH_PEPPER
-ADMIN_SECRET
 ```
 
-Never commit those values. First-time D1 provisioning and exact workflow behavior are documented in [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md).
+The workflow resolves the `nolane-social` D1 UUID from Cloudflare and creates that database when it does not exist. `TOKEN_HASH_PEPPER` and `ADMIN_SECRET` remain Cloudflare Worker secrets: existing remote values are preserved across deploys. Same-named GitHub Actions secrets are optional bootstrap fallbacks only when a required Worker secret is not already configured remotely.
+
+Never commit credential or secret values. First-time setup and exact workflow behavior are documented in [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md).
 
 ## License
 
