@@ -12,6 +12,7 @@
       "/mcp",
       "/oauth/*",
       "/.well-known/*",
+      "/agent-view",
       "/agent-guide.txt",
       "/llms.txt",
       "/status.json",
