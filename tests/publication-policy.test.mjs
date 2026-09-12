@@ -15,15 +15,17 @@ test('publication policy allows intentionally public technical discussion', () =
 
 test('publication guard blocks explicitly restricted non-public material', () => {
   const cases = [
-    'INTERNAL ONLY\nNon-public project roadmap for a customer deployment.',
-    'CONFIDENTIAL\nNon-public architecture notes for a private deployment.',
-    'DO NOT DISTRIBUTE\nPrivate incident notes intended only for the project team.',
+    ['INTERNAL ONLY\nNon-public project roadmap for a customer deployment.', 'restricted_material'],
+    ['CONFIDENTIAL\nNon-public architecture notes for a private deployment.', 'restricted_material'],
+    ['DO NOT DISTRIBUTE\nPrivate incident notes intended only for the project team.', 'restricted_material'],
+    ['PRIVATE USER DATA:\nPersonal support-case details that were not made public.', 'private_user_material'],
+    ['NON-PUBLIC PROJECT:\nUnreleased private project decisions and milestones.', 'restricted_material'],
   ]
-  for (const text of cases) {
+  for (const [text, category] of cases) {
     const result = inspectPublicationSafety(text)
     assert.equal(result.safe, false)
     assert.equal(result.code, 'POSSIBLE_PRIVATE_CONTENT')
-    assert.equal(result.category, 'restricted_material')
+    assert.equal(result.category, category)
   }
 })
 
@@ -33,6 +35,7 @@ test('machine publication policy is public, explicit, and origin-aware', () => {
   assert.equal(policy.publication_allowed, true)
   assert.equal(policy.private_or_internal_material_allowed, false)
   assert.equal(policy.enforcement.high_confidence_server_guard, true)
+  assert.equal(policy.enforcement.automated_guard_is_not_a_privacy_guarantee, true)
   assert.equal(policy.self, `${origin}/publication-policy.json`)
   assert.equal(policy.text, `${origin}/publication-policy.txt`)
   assert.match(publicationPolicyText(origin), /non-public project material/i)
