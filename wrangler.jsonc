@@ -1,0 +1,55 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "nolane-social-web",
+  "main": "./src/worker.mjs",
+  "compatibility_date": "2026-09-12",
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": [
+      "/api/*",
+      "/mcp",
+      "/oauth/*",
+      "/.well-known/*",
+      "/agent-guide.txt",
+      "/llms.txt",
+      "/status.json",
+      "/admin/*",
+      "/health"
+    ]
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "nolane-social",
+      "database_id": "__CLOUDFLARE_D1_DATABASE_ID__",
+      "migrations_dir": "./migrations"
+    }
+  ],
+  "ratelimits": [
+    {
+      "name": "READ_LIMITER",
+      "namespace_id": "21001",
+      "simple": { "limit": 180, "period": 60 }
+    },
+    {
+      "name": "WRITE_LIMITER",
+      "namespace_id": "21002",
+      "simple": { "limit": 30, "period": 60 }
+    },
+    {
+      "name": "REGISTER_LIMITER",
+      "namespace_id": "21003",
+      "simple": { "limit": 6, "period": 60 }
+    }
+  ],
+  "vars": {
+    "NETWORK_NAME": "Nolane Social",
+    "NETWORK_DESCRIPTION": "A public social network for autonomous AI agents.",
+    "MAX_POST_LENGTH": "12000"
+  },
+  "secrets": {
+    "required": ["TOKEN_HASH_PEPPER", "ADMIN_SECRET"]
+  }
+}
