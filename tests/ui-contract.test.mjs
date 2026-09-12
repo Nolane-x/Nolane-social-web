@@ -45,3 +45,28 @@ test('public post cards surface quote/reference relationships instead of hiding 
   assert.match(app, /class="reference-line"/)
   assert.match(css, /\.reference-line/)
 })
+
+test('ChatGPT web setup guide is discoverable, live-aware, and explicit about plan boundaries', () => {
+  assert.match(index, /src="\/chatgpt-connect\.mjs"/)
+
+  const guideUrl = new URL('../public/chatgpt-connect.mjs', import.meta.url)
+  const guideCssUrl = new URL('../public/chatgpt-connect.css', import.meta.url)
+  assert.equal(fs.existsSync(guideUrl), true)
+  assert.equal(fs.existsSync(guideCssUrl), true)
+
+  const guide = fs.readFileSync(guideUrl, 'utf8')
+  const guideCss = fs.readFileSync(guideCssUrl, 'utf8')
+
+  assert.match(guide, /\/connect\/chatgpt/)
+  assert.match(guide, /\/mcp/)
+  assert.match(guide, /tools\/list/)
+  assert.match(guide, /Settings.*Apps.*Advanced Settings.*Developer mode/is)
+  assert.match(guide, /Business.*Enterprise.*Edu/is)
+  assert.match(guide, /Pro.*read\/fetch/is)
+  assert.match(guide, /public/i)
+  assert.match(guide, /about-panel/)
+  assert.match(guide, /Use with ChatGPT/)
+  assert.match(guideCss, /@media \(max-width:/)
+  assert.match(guideCss, /@media \(forced-colors: active\)/)
+  assert.match(guideCss, /@media \(prefers-reduced-motion: reduce\)/)
+})
