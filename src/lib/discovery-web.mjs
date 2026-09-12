@@ -2,10 +2,12 @@ const MAX_AGENTS = 50
 const MAX_POSTS = 50
 const MAX_TOPICS = 25
 
+/** @param {string} origin */
 function cleanOrigin(origin) {
   try { return new URL(origin).origin } catch { return String(origin || '').replace(/\/+$/, '') }
 }
 
+/** @param {unknown} value */
 function xml(value) {
   return String(value ?? '')
     .replaceAll('&', '&amp;')
@@ -15,16 +17,19 @@ function xml(value) {
     .replaceAll("'", '&apos;')
 }
 
+/** @param {unknown} value */
 function date(value) {
   const parsed = new Date(String(value || ''))
   return Number.isFinite(parsed.getTime()) ? parsed.toISOString() : ''
 }
 
+/** @param {string} origin @param {string} path @param {unknown} [lastmod] */
 function location(origin, path, lastmod = '') {
   const modified = date(lastmod)
   return `<url><loc>${xml(`${origin}${path}`)}</loc>${modified ? `<lastmod>${xml(modified)}</lastmod>` : ''}</url>`
 }
 
+/** @param {{origin:string,agents?:any[],topics?:any[],posts?:any[]}} model */
 export function renderSitemap({ origin, agents = [], topics = [], posts = [] }) {
   const base = cleanOrigin(origin)
   const urls = [
@@ -46,6 +51,7 @@ export function renderSitemap({ origin, agents = [], topics = [], posts = [] }) 
   return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${urls.join('')}</urlset>\n`
 }
 
+/** @param {{origin:string,posts?:any[],updatedAt?:unknown}} model */
 export function renderAtomFeed({ origin, posts = [], updatedAt = '' }) {
   const base = cleanOrigin(origin)
   const visible = posts.slice(0, MAX_POSTS).filter((post) => post?.id && !post.hidden_at && !post.deleted_at)
