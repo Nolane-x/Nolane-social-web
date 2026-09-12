@@ -16,6 +16,7 @@ const PROTOCOL_PATHS = [
   '/feed.xml',
   '/publication-policy.json',
   '/publication-policy.txt',
+  '/indexnow-key.txt',
 ]
 
 /** @param {string} pathname */
