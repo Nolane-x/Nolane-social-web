@@ -72,6 +72,55 @@ export async function resolveD1Database({ accountId, apiToken, databaseName, fet
   return databaseId(created?.result)
 }
 
+export async function ensureWorkerName({ accountId, apiToken, desiredName, legacyName, fetchImpl = fetch }) {
+  const account = requiredText(accountId, 'CLOUDFLARE_ACCOUNT_ID')
+  const token = requiredText(apiToken, 'CLOUDFLARE_API_TOKEN')
+  const desired = requiredText(desiredName, 'desiredName')
+  const legacy = requiredText(legacyName, 'legacyName')
+  if (desired === legacy) throw new Error('desiredName must differ from legacyName')
+
+  const workerPath = (nameOrId) => `/accounts/${encodeURIComponent(account)}/workers/workers/${encodeURIComponent(nameOrId)}`
+  const [desiredPayload, legacyPayload] = await Promise.all([
+    cloudflareRequest({ accountId: account, apiToken: token, pathname: workerPath(desired), fetchImpl, allowNotFound: true }),
+    cloudflareRequest({ accountId: account, apiToken: token, pathname: workerPath(legacy), fetchImpl, allowNotFound: true }),
+  ])
+
+  const desiredWorker = desiredPayload?.result || null
+  const legacyWorker = legacyPayload?.result || null
+  const desiredId = String(desiredWorker?.id || '').trim()
+  const legacyId = String(legacyWorker?.id || '').trim()
+
+  if (desiredWorker && legacyWorker && desiredId !== legacyId) {
+    throw new Error(`Worker name ${desired} already belongs to a different Worker; refusing to overwrite it`)
+  }
+
+  if (desiredWorker) {
+    if (!desiredId) throw new Error(`Cloudflare returned Worker ${desired} without an immutable id`)
+    return { id: desiredId, name: desired, renamed: false }
+  }
+
+  if (!legacyWorker) {
+    return { id: '', name: desired, renamed: false }
+  }
+
+  if (!legacyId) throw new Error(`Cloudflare returned Worker ${legacy} without an immutable id`)
+  const renamedPayload = await cloudflareRequest({
+    accountId: account,
+    apiToken: token,
+    pathname: workerPath(legacyId),
+    method: 'PATCH',
+    body: { name: desired },
+    fetchImpl,
+  })
+  const renamedWorker = renamedPayload?.result || null
+  const renamedId = String(renamedWorker?.id || '').trim()
+  const renamedName = String(renamedWorker?.name || '').trim()
+  if (renamedId !== legacyId || renamedName !== desired) {
+    throw new Error(`Cloudflare did not confirm the in-place Worker rename from ${legacy} to ${desired}`)
+  }
+  return { id: renamedId, name: renamedName, renamed: true }
+}
+
 export function planWorkerSecrets(remoteNames, localSecrets = {}) {
   const remote = new Set((remoteNames || []).map((name) => String(name)))
   const missing = []
@@ -113,8 +162,15 @@ async function main() {
   const githubEnv = requiredText(process.env.GITHUB_ENV, 'GITHUB_ENV')
   const runnerTemp = requiredText(process.env.RUNNER_TEMP, 'RUNNER_TEMP')
   const databaseName = 'nolane-social'
-  const workerName = 'nolane-social-web'
+  const workerName = 'social'
+  const legacyWorkerName = 'nolane-social-web'
 
+  const worker = await ensureWorkerName({
+    accountId,
+    apiToken,
+    desiredName: workerName,
+    legacyName: legacyWorkerName,
+  })
   const d1Id = await resolveD1Database({ accountId, apiToken, databaseName })
   const remoteSecretNames = await listWorkerSecretNames({ accountId, apiToken, workerName })
   const plan = planWorkerSecrets(remoteSecretNames, {
@@ -136,7 +192,7 @@ async function main() {
     CLOUDFLARE_D1_DATABASE_ID: d1Id,
     NOLANE_SECRETS_FILE: secretsFile,
   })
-  process.stdout.write(`Cloudflare preflight ready: D1=${databaseName}; remote Worker secrets preserved=${remoteSecretNames.length}; uploads=${Object.keys(plan.upload).length}\n`)
+  process.stdout.write(`Cloudflare preflight ready: Worker=${worker.name}${worker.renamed ? ' (renamed in place)' : ''}; D1=${databaseName}; remote Worker secrets preserved=${remoteSecretNames.length}; uploads=${Object.keys(plan.upload).length}\n`)
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
