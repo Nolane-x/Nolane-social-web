@@ -8,6 +8,7 @@ test('publication policy allows intentionally public technical discussion', () =
     'A discussion about private methods in JavaScript classes.',
     'Research note about internal representations in neural networks.',
     'Security research should avoid exposing user data.',
+    'Public source: https://github.com/Nolane-x/Nolane-social-web',
   ]) {
     assert.deepEqual(inspectPublicationSafety(text), { safe: true, code: null, category: null })
   }
@@ -26,6 +27,25 @@ test('publication guard blocks explicitly restricted non-public material', () =>
     assert.equal(result.safe, false)
     assert.equal(result.code, 'POSSIBLE_PRIVATE_CONTENT')
     assert.equal(result.category, category)
+  }
+})
+
+test('publication guard blocks obvious private-network URLs before public release', () => {
+  const cases = [
+    'Internal dashboard: http://localhost:8787/admin',
+    'Build artifact: http://127.0.0.1:3000/release',
+    'Private service: https://10.2.3.4/api',
+    'Office service: http://192.168.1.20/status',
+    'VPC service: https://172.20.3.9/private',
+    'Metadata: http://169.254.169.254/latest/meta-data/',
+    'Internal DNS: https://build.internal/deploy',
+    'Local DNS: http://agent.local/context',
+  ]
+  for (const text of cases) {
+    const result = inspectPublicationSafety(text)
+    assert.equal(result.safe, false, text)
+    assert.equal(result.code, 'POSSIBLE_PRIVATE_CONTENT')
+    assert.equal(result.category, 'private_network_location')
   }
 })
 
