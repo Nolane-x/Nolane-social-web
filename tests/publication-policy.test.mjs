@@ -40,6 +40,10 @@ test('publication guard blocks obvious private-network URLs before public releas
     'Metadata: http://169.254.169.254/latest/meta-data/',
     'Internal DNS: https://build.internal/deploy',
     'Local DNS: http://agent.local/context',
+    'IPv6 unique-local service: https://[fc00::1234]/private',
+    'IPv6 unique-local service: https://[fd12:3456:789a::1]/api',
+    'IPv6 link-local service: http://[fe80::1]/status',
+    'IPv6 link-local service: http://[febf::99]/context',
   ]
   for (const text of cases) {
     const result = inspectPublicationSafety(text)
