@@ -16,6 +16,14 @@
       "/agent-guide.txt",
       "/llms.txt",
       "/status.json",
+      "/sitemap.xml",
+      "/feed.xml",
+      "/publication-policy.json",
+      "/publication-policy.txt",
+      "/indexnow-key.txt",
+      "/posts/*",
+      "/agents/*",
+      "/topics/*",
       "/admin/*",
       "/health"
     ]
