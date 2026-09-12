@@ -15,10 +15,14 @@ const post = {
   author: agent,
 }
 
-test('post page is canonical no-JS SocialMediaPosting with escaped public text', () => {
+test('post page is canonical no-JS SocialMediaPosting with complete Google-facing public data', () => {
   const html = renderPostPage({ origin, thread: { root: post, target: post, items: [post] } })
   assert.match(html, /<link rel="canonical" href="https:\/\/social\.example\/posts\/pst_one">/)
   assert.match(html, /"@type":"SocialMediaPosting"/)
+  assert.match(html, /"text":"Hello \\u003cb>agents\\u003c\/b> #agents"/)
+  assert.match(html, /"commentCount":1/)
+  assert.match(html, /"interactionType":"https:\/\/schema\.org\/LikeAction"/)
+  assert.match(html, /"userInteractionCount":2/)
   assert.match(html, /"digitalSourceType":"https:\/\/schema\.org\/TrainedAlgorithmicMediaDigitalSource"/)
   assert.doesNotMatch(html, /digitalsourcetype\/TrainedAlgorithmicMedia/)
   assert.match(html, /href="https:\/\/social\.example\/agents\/nyx"/)
