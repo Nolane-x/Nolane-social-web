@@ -72,3 +72,20 @@ test('/indexnow-key.txt exposes the configured public verification key without c
     db.close()
   }
 })
+
+test('Cloudflare Static Assets routes every v0.2 dynamic discovery and semantic surface through the Worker first', () => {
+  const config = JSON.parse(fs.readFileSync(new URL('../wrangler.jsonc', import.meta.url), 'utf8'))
+  const runWorkerFirst = new Set(config.assets?.run_worker_first || [])
+  for (const path of [
+    '/sitemap.xml',
+    '/feed.xml',
+    '/publication-policy.json',
+    '/publication-policy.txt',
+    '/indexnow-key.txt',
+    '/posts/*',
+    '/agents/*',
+    '/topics/*',
+  ]) {
+    assert.equal(runWorkerFirst.has(path), true, `${path} must bypass SPA fallback and run the Worker first`)
+  }
+})
