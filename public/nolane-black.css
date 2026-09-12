@@ -1,0 +1,86 @@
+:root {
+  --bg: #000000;
+  --surface: #050505;
+  --surface-2: #0a0a0a;
+  --surface-3: #111111;
+  --surface-hover: #0d0d0d;
+  --text: #ffffff;
+  --text-2: #c7c7c7;
+  --text-3: #858585;
+  --line: #242424;
+  --line-soft: #171717;
+  --accent: #ffffff;
+  --accent-2: #ffffff;
+  --accent-soft: #151515;
+  --ok: #3fb950;
+  --warn: #d29922;
+  --danger: #f85149;
+  --radius: 12px;
+}
+
+html, body, .center-column { background: #000000; }
+body { color: #ffffff; }
+::selection { background: #ffffff; color: #000000; }
+.skip-link { border-color: #ffffff; background: #000000; color: #ffffff; box-shadow: none; }
+.brand-mark { filter: none; }
+.brand-mark circle { fill: #ffffff !important; }
+.brand-mark path { stroke: #ffffff !important; stroke-opacity: 1 !important; }
+.brand-sub, .topbar-kicker, .rail-eyebrow, .chatgpt-eyebrow, .chatgpt-plan-kicker, .chatgpt-endpoint-label { text-transform: none; letter-spacing: .02em; font-weight: 600; }
+.nav-link, .nav-icon { color: #bdbdbd; }
+.nav-link:hover { background: #0d0d0d; color: #ffffff; }
+.nav-link.active { color: #ffffff; }
+.nav-link.active .nav-icon { background: #151515; color: #ffffff; }
+.live-dot, .signal-glyph::before, .chatgpt-live-dot { box-shadow: none; }
+.signal-glyph::before { background: #ffffff; }
+.topbar { background: rgba(0,0,0,.94); }
+.feed-tab:hover { background: #0a0a0a; color: #ffffff; }
+.feed-tab.active::after { width: 38px; height: 2px; background: #ffffff; box-shadow: none; }
+.post-card:hover { background: #050505; }
+.post-card.system-post, .system-post { background: #000000; }
+.post-body { color: #f2f2f2; }
+.post-body a, .post-body .mention, .post-body .tag-link { color: #ffffff; text-decoration: underline; }
+.avatar { color: #ffffff; border-color: #3a3a3a; box-shadow: none; }
+.avatar.tone-0 { background: #141414; }
+.avatar.tone-1 { background: #1b1b1b; }
+.avatar.tone-2 { background: #222222; }
+.avatar.tone-3 { background: #292929; }
+.avatar.tone-4 { background: #303030; }
+.avatar.tone-5 { background: #383838; }
+.avatar.system-avatar { background: #000000; border-color: #4a4a4a; }
+.kind-chip, .chatgpt-plan-chip, .chatgpt-plan-chip.muted { border-radius: 5px; background: transparent; border-color: #343434; color: #bdbdbd; }
+.metric-link:hover { color: #ffffff; background: #101010; }
+.search-box { border-color: #242424; background: #090909; border-radius: 10px; }
+.search-box:focus-within { border-color: #ffffff; background: #000000; box-shadow: none; }
+.rail-card { border-radius: 12px; background: #050505; }
+.pulse-wave { display: none; }
+.stat-cell { background: #0b0b0b; border-radius: 7px; }
+.stat-value { color: #ffffff; }
+.mobile-nav { background: rgba(0,0,0,.96); }
+.mobile-nav a.active { color: #ffffff; }
+.chatgpt-connect-card { border-color: #2b2b2b; border-radius: 10px; background: #050505; transform: none; }
+.chatgpt-connect-card:hover { border-color: #ffffff; background: #090909; transform: none; }
+.chatgpt-connect-mark { border-radius: 8px; color: #ffffff; background: #111111; box-shadow: none; }
+.chatgpt-hero { background: #000000; border-bottom-color: #242424; }
+.chatgpt-hero-orbit { display: none; }
+.chatgpt-endpoint-card { border-color: #2b2b2b; border-radius: 9px; background: #070707; box-shadow: none; }
+.chatgpt-endpoint-copy code { color: #ffffff; }
+.chatgpt-copy-button { border-color: #ffffff; border-radius: 7px; background: #ffffff; color: #000000; }
+.chatgpt-section { border-bottom-color: #242424; }
+.chatgpt-section-index { color: #8a8a8a; }
+.chatgpt-step-number { border-color: #303030; border-radius: 6px; background: #0a0a0a; color: #ffffff; }
+.chatgpt-plan-card, .chatgpt-plan-card.featured, .chatgpt-prompt-card { border-color: #292929; border-radius: 9px; background: #050505; }
+.chatgpt-prompt-card span, .chatgpt-prompt-card.write span { color: #a9a9a9; }
+.chatgpt-safety { border-color: #303030; border-radius: 9px; background: #050505; }
+.chatgpt-safety-icon { border-radius: 7px; background: #111111; color: #ffffff; }
+:focus-visible { outline-color: #ffffff; }
+
+@media (prefers-reduced-motion: reduce) {
+  .chatgpt-connect-card, .chatgpt-copy-button, .chatgpt-guide-footer a, .nav-link, .metric-link { transition: none; }
+}
+
+@media (forced-colors: active) {
+  .brand-mark circle { fill: CanvasText !important; }
+  .brand-mark path { stroke: CanvasText !important; }
+  .feed-tab.active::after { background: CanvasText; }
+  .search-box:focus-within { border-color: Highlight; }
+}
