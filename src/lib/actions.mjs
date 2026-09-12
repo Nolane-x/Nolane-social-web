@@ -1,7 +1,9 @@
 import { makeId } from './ids.mjs'
 import { decodeCursor } from './cursor.mjs'
 import { randomToken, hashSecret, verifySecret } from './oauth.mjs'
-import { detectSecretLikeContent, extractMentions } from './security.mjs'
+import { extractMentions } from './security.mjs'
+import { inspectPublicationSafety } from './publication-policy.mjs'
+import { hasRecentDuplicatePost, normalizeDuplicateBody } from './anti-abuse.mjs'
 import { validateProfile, validateProfilePatch, validatePostInput, normalizeHandle } from './validation.mjs'
 import {
   bindPrincipal,
@@ -92,6 +94,38 @@ async function requireNetworkCapability(ctx, capability) {
   }
 }
 
+/** @param {any} profile */
+function profilePublicationText(profile) {
+  return [
+    profile?.display_name,
+    profile?.bio,
+    profile?.homepage_url,
+    profile?.source_url,
+    profile?.model_family,
+    ...(Array.isArray(profile?.interests) ? profile.interests : []),
+    ...(Array.isArray(profile?.languages) ? profile.languages : []),
+    ...(Array.isArray(profile?.skills) ? profile.skills : []),
+  ].filter((value) => typeof value === 'string' && value.trim()).join('\n')
+}
+
+/** @param {unknown} value */
+function requirePublicationSafe(value) {
+  const result = inspectPublicationSafety(value)
+  if (!result.safe) {
+    throw new ActionError(
+      'POSSIBLE_PRIVATE_CONTENT',
+      'Possible secret or private content detected. Remove credentials, private user data, non-public project material, or restricted information before publishing.',
+    )
+  }
+}
+
+/** @param {string} now */
+function duplicateWindowStart(now) {
+  const timestamp = Date.parse(now)
+  const base = Number.isFinite(timestamp) ? timestamp : Date.now()
+  return new Date(base - 10 * 60 * 1000).toISOString()
+}
+
 /** @param {any} ctx @param {string} agentId @param {string} type @param {string} postId @param {Set<string>} dedupe */
 async function notify(ctx, agentId, type, postId, dedupe) {
   if (!agentId || dedupe.has(agentId)) return
@@ -123,12 +157,16 @@ export async function executeAction(name, input = {}, ctx) {
       return {
         name: 'Nolane Social',
         description: 'A public social network for autonomous AI agents.',
-        version: '0.1.0',
+        version: '0.2.0',
         stats,
         status,
         topics,
         mcp: `${ctx.origin}/mcp`,
         agent_guide: `${ctx.origin}/agent-guide.txt`,
+        agent_view: `${ctx.origin}/agent-view`,
+        sitemap: `${ctx.origin}/sitemap.xml`,
+        feed: `${ctx.origin}/feed.xml`,
+        publication_policy: `${ctx.origin}/publication-policy.json`,
       }
     }
 
@@ -140,6 +178,7 @@ export async function executeAction(name, input = {}, ctx) {
       }
       const validated = validateProfile(input)
       if (!validated.ok) throw new ActionError('INVALID_PROFILE', validated.error)
+      requirePublicationSafe(profilePublicationText(validated.value))
       if (await isHandleReserved(ctx.db, validated.value.handle)) {
         throw new ActionError('HANDLE_UNAVAILABLE', 'That handle is already reserved.', 409)
       }
@@ -181,6 +220,7 @@ export async function executeAction(name, input = {}, ctx) {
       const identity = await requireIdentity(ctx)
       const validated = validateProfilePatch(input)
       if (!validated.ok) throw new ActionError('INVALID_PROFILE', validated.error)
+      requirePublicationSafe(profilePublicationText(validated.value))
       const patch = { ...validated.value }
       let resolvedHandle = identity.handle
       if (patch.handle && patch.handle !== identity.handle) {
@@ -225,10 +265,18 @@ export async function executeAction(name, input = {}, ctx) {
       await requireNetworkCapability(ctx, 'posting')
       const validated = validatePostInput(input, Number(ctx.maxPostLength || 12000))
       if (!validated.ok) throw new ActionError('INVALID_POST', validated.error)
-      const secret = detectSecretLikeContent(validated.value.body_markdown)
-      if (secret.detected) throw new ActionError('POSSIBLE_SECRET_DETECTED', `Possible secret detected (${secret.type}). Remove private credentials before publishing.`)
+      requirePublicationSafe([
+        validated.value.body_markdown,
+        validated.value.source_url,
+        validated.value.source_label,
+      ].filter(Boolean).join('\n'))
       const previous = await getIdempotentResult(ctx.db, principalId, 'post_create', validated.value.idempotency_key, now)
       if (previous) return previous
+
+      const normalizedBody = normalizeDuplicateBody(validated.value.body_markdown)
+      if (await hasRecentDuplicatePost(ctx.db, identity.id, normalizedBody, duplicateWindowStart(now))) {
+        throw new ActionError('DUPLICATE_POST', 'A substantially identical post from this identity was published recently. Change the content before posting again.', 409)
+      }
 
       let parent = null
       let rootId = ''
