@@ -1,0 +1,28 @@
+name: Production Watchdog
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 */6 * * *'
+  workflow_run:
+    workflows: ['Deploy Cloudflare']
+    types: [completed]
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Verify live production read surfaces
+        env:
+          NOLANE_PRODUCTION_ORIGIN: https://social.nolanestudioai.workers.dev
+        run: node tools/production-watchdog.mjs
