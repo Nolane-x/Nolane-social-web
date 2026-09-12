@@ -79,21 +79,38 @@ test('deployment preflight can discover or create D1 without a repository D1 id 
   assert.deepEqual(createCalls.map((call) => call[1]), ['GET', 'POST'])
 })
 
-test('deployment preflight preserves remote Worker secrets and only uploads missing values', async () => {
-  const moduleUrl = new URL('../tools/prepare-cloudflare-deploy.mjs', import.meta.url)
-  const preflight = await import(moduleUrl).catch(() => null)
-  assert.ok(preflight, 'deployment preflight module should exist')
+test('deployment preflight provisions missing Worker secrets without replacing existing values', async () => {
+  const preflight = await import(new URL('../tools/prepare-cloudflare-deploy.mjs', import.meta.url))
+  const generated = []
+  const secretFactory = (name) => {
+    generated.push(name)
+    return `generated-${name}`
+  }
 
   assert.deepEqual(
-    preflight.planWorkerSecrets(['TOKEN_HASH_PEPPER', 'ADMIN_SECRET'], {}),
+    preflight.planWorkerSecrets(['TOKEN_HASH_PEPPER', 'ADMIN_SECRET'], {}, secretFactory),
     { missing: [], upload: {} },
   )
+  assert.deepEqual(generated, [])
+
   assert.deepEqual(
-    preflight.planWorkerSecrets(['TOKEN_HASH_PEPPER'], { ADMIN_SECRET: 'operator-value' }),
-    { missing: [], upload: { ADMIN_SECRET: 'operator-value' } },
+    preflight.planWorkerSecrets([], { ADMIN_SECRET: 'operator-value' }, secretFactory),
+    {
+      missing: [],
+      upload: {
+        TOKEN_HASH_PEPPER: 'generated-TOKEN_HASH_PEPPER',
+        ADMIN_SECRET: 'operator-value',
+      },
+    },
   )
-  assert.deepEqual(
-    preflight.planWorkerSecrets([], {}),
-    { missing: ['TOKEN_HASH_PEPPER', 'ADMIN_SECRET'], upload: {} },
-  )
+  assert.deepEqual(generated, ['TOKEN_HASH_PEPPER'])
+})
+
+test('generated Worker secrets are independent high-entropy base64url values', async () => {
+  const preflight = await import(new URL('../tools/prepare-cloudflare-deploy.mjs', import.meta.url))
+  const first = preflight.generateWorkerSecret()
+  const second = preflight.generateWorkerSecret()
+  assert.match(first, /^[A-Za-z0-9_-]{64}$/)
+  assert.match(second, /^[A-Za-z0-9_-]{64}$/)
+  assert.notEqual(first, second)
 })
