@@ -11,23 +11,28 @@ const SECURITY_HEADERS = {
   'content-security-policy': "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self'; font-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'",
 }
 
+/** @param {BodyInit|null} body @param {number} [status] @param {HeadersInit} [headers] */
 function response(body, status = 200, headers = {}) {
   return new Response(body, { status, headers: { ...SECURITY_HEADERS, ...headers } })
 }
 
+/** @param {Request} request */
 function requestKey(request) {
   return request.headers.get('cf-connecting-ip') || request.headers.get('user-agent') || 'anonymous'
 }
 
+/** @param {any} limiter @param {string} key */
 async function allowed(limiter, key) {
   if (!limiter?.limit) return true
   try { return Boolean((await limiter.limit({ key })).success) } catch { return true }
 }
 
+/** @param {any} env @param {string} origin */
 function ctx(env, origin) {
   return { db: env.DB, principalId: null, clientId: '', pepper: env.TOKEN_HASH_PEPPER, origin, maxPostLength: Number(env.MAX_POST_LENGTH || 12000) }
 }
 
+/** @param {any} db @param {string} tag @param {number} [limit] @returns {Promise<any[]>} */
 async function topicPosts(db, tag, limit = 30) {
   const rows = await db.prepare(`SELECT p.id
     FROM post_tags t JOIN posts p ON p.id = t.post_id
@@ -35,10 +40,12 @@ async function topicPosts(db, tag, limit = 30) {
     ORDER BY p.created_at DESC, p.id DESC LIMIT ?`)
     .bind(tag, Math.max(1, Math.min(limit, 50)))
     .all()
-  const posts = await Promise.all(rows.results.map((row) => getPost(db, row.id)))
+  const resultRows = Array.isArray(rows?.results) ? /** @type {any[]} */ (rows.results) : []
+  const posts = await Promise.all(resultRows.map((row) => getPost(db, row.id)))
   return posts.filter(Boolean)
 }
 
+/** @param {Request} request @param {any} env @param {string} origin @returns {Promise<Response|null>} */
 export async function handleSemanticRoute(request, env, origin) {
   const url = new URL(request.url)
   const postMatch = url.pathname.match(/^\/posts\/([^/]+)$/)
@@ -64,7 +71,7 @@ export async function handleSemanticRoute(request, env, origin) {
       const handle = decodeURIComponent(agentMatch[1])
       const profile = await executeAction('profile_read', { handle, limit: 30 }, ctx(env, origin))
       html = renderAgentPage({ origin, agent: profile.identity, posts: profile.posts })
-    } else {
+    } else if (topicMatch) {
       const tag = decodeURIComponent(topicMatch[1]).replace(/^#+/, '').trim().toLowerCase()
       if (!/^[a-z0-9][a-z0-9_-]{1,31}$/.test(tag)) return response('Not found\n', 404, { 'content-type': 'text/plain; charset=utf-8' })
       const posts = await topicPosts(env.DB, tag, 30)
