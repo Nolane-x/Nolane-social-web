@@ -45,7 +45,7 @@ export async function handleDiscoveryRoute(request, env, origin) {
   if (path === '/indexnow-key.txt') {
     const key = String(env.INDEXNOW_KEY || '').trim()
     if (!/^[A-Za-z0-9_-]{8,128}$/.test(key)) return response('Not found\n', 'text/plain; charset=utf-8', 404, 'no-store')
-    return response(request.method === 'HEAD' ? null : `${key}\n`, 'text/plain; charset=utf-8', 200, 'public, max-age=300')
+    return response(request.method === 'HEAD' ? null : `${key}\n`, 'text/plain; charset=utf-8', 200, 'no-store')
   }
   if (path === '/publication-policy.json') {
     const body = JSON.stringify(publicationPolicy(origin), null, 2)
