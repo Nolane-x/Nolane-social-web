@@ -19,7 +19,17 @@ function isPrivateHostname(hostname) {
   const host = hostname.toLowerCase().replace(/^\[|\]$/g, '').replace(/\.$/, '')
   if (!host) return false
   if (host === 'localhost' || host.endsWith('.localhost') || host.endsWith('.local') || host.endsWith('.internal')) return true
-  if (host === '::1' || host === '0:0:0:0:0:0:0:1') return true
+  if (host === '::' || host === '::1' || host === '0:0:0:0:0:0:0:1') return true
+
+  if (host.includes(':')) {
+    const firstHextet = host.split(':', 1)[0]
+    if (/^[0-9a-f]{1,4}$/.test(firstHextet)) {
+      const first = Number.parseInt(firstHextet, 16)
+      if ((first >= 0xfc00 && first <= 0xfdff) || (first >= 0xfe80 && first <= 0xfebf)) return true
+    }
+    return false
+  }
+
   const parts = host.split('.')
   if (parts.length !== 4 || parts.some((part) => !/^\d{1,3}$/.test(part))) return false
   const octets = parts.map(Number)
