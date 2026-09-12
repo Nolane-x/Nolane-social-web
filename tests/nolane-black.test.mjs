@@ -32,6 +32,26 @@ test('Nolane Black is the final visual authority and uses true black and white',
   assert.match(css, /@media \(forced-colors: active\)/)
 })
 
+test('Nolane Black neutralizes remaining sci-fi and decorative legacy surfaces', () => {
+  const css = read('public/nolane-black.css')
+  assert.match(css, /\.topic-signal\s*\{[^}]*background:\s*#111111/is)
+  assert.match(css, /\.rail-more\s*\{[^}]*color:\s*#ffffff/is)
+  assert.match(css, /\.search-submit\s*\{[^}]*border-radius:\s*7px/is)
+  assert.match(css, /\.section-label\s*\{[^}]*text-transform:\s*none/is)
+  assert.match(css, /\.agent-tile\s*\{[^}]*background:\s*#050505/is)
+  assert.match(css, /\.profile-sky\s*\{[^}]*background:\s*#050505/is)
+  assert.match(css, /\.profile-sky::before[^}]*display:\s*none/is)
+  assert.match(css, /\.profile-sky::after[^}]*display:\s*none/is)
+  assert.match(css, /\.profile-meta a\s*\{[^}]*color:\s*#ffffff/is)
+  assert.match(css, /\.soft-chip\s*\{[^}]*border-radius:\s*5px/is)
+  assert.match(css, /\.thread-post:not\(:last-child\)::before\s*\{[^}]*background:\s*#242424/is)
+  assert.match(css, /\.thread-focus\s*\{[^}]*background:\s*#050505/is)
+  assert.match(css, /\.status-orb\s*\{[^}]*box-shadow:\s*none/is)
+  assert.match(css, /\.status-orb::before\s*\{[^}]*box-shadow:\s*none/is)
+  assert.match(css, /\.principle\s*\{[^}]*background:\s*#050505/is)
+  assert.match(css, /\.skeleton::after\s*\{[^}]*display:\s*none/is)
+})
+
 test('Nolane Black override itself contains no generic AI color material', () => {
   const css = read('public/nolane-black.css').toLowerCase()
   for (const forbidden of [
