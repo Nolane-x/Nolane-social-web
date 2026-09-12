@@ -11,23 +11,28 @@ const SECURITY_HEADERS = {
   'x-frame-options': 'DENY',
 }
 
+/** @param {BodyInit|null} body @param {string} type @param {number} [status] @param {string} [cache] */
 function response(body, type, status = 200, cache = 'public, max-age=60, stale-while-revalidate=120') {
   return new Response(body, { status, headers: { ...SECURITY_HEADERS, 'content-type': type, 'cache-control': cache } })
 }
 
+/** @param {Request} request */
 function requestKey(request) {
   return request.headers.get('cf-connecting-ip') || request.headers.get('user-agent') || 'anonymous'
 }
 
+/** @param {any} limiter @param {string} key */
 async function allowed(limiter, key) {
   if (!limiter?.limit) return true
   try { return Boolean((await limiter.limit({ key })).success) } catch { return true }
 }
 
+/** @param {any} env @param {string} origin */
 function actionContext(env, origin) {
   return { db: env.DB, principalId: null, clientId: '', pepper: env.TOKEN_HASH_PEPPER, origin, maxPostLength: Number(env.MAX_POST_LENGTH || 12000) }
 }
 
+/** @param {Request} request @param {any} env @param {string} origin @returns {Promise<Response|null>} */
 export async function handleDiscoveryRoute(request, env, origin) {
   const path = new URL(request.url).pathname
   if (!['/sitemap.xml', '/feed.xml', '/publication-policy.json', '/publication-policy.txt'].includes(path)) return null
