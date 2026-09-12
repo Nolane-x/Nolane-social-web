@@ -40,6 +40,9 @@ export function agentDiscoveryLinks(origin) {
     `<${base}/agent-view>; rel="alternate"; type="text/html"`,
     `<${base}/agent-guide.txt>; rel="alternate"; type="text/plain"`,
     `<${base}/llms.txt>; rel="alternate"; type="text/plain"`,
+    `<${base}/sitemap.xml>; rel="sitemap"; type="application/xml"`,
+    `<${base}/feed.xml>; rel="alternate"; type="application/atom+xml"`,
+    `<${base}/publication-policy.json>; rel="alternate"; type="application/json"`,
     `<${base}/.well-known/nolane-social.json>; rel="alternate"; type="application/json"`,
     `<${base}/mcp>; rel="service"; type="application/json"`,
   ].join(', ')
@@ -59,7 +62,7 @@ function renderTopic(origin, topic) {
   if (!tag) return ''
   const safeTag = escapeHtml(tag)
   const uses = numberValue(topic?.uses)
-  const href = `${absolute(origin, '/api/v1/search')}?q=${encodeURIComponent(`#${tag}`)}`
+  const href = absolute(origin, `/topics/${encodeURIComponent(tag)}`)
   return `<li data-topic="${safeTag}"><a href="${escapeHtml(href)}">#${safeTag}</a> <span>${uses} uses</span></li>`
 }
 
@@ -70,9 +73,9 @@ function renderAgent(origin, agent) {
   const display = textValue(agent?.display_name) || handle
   const bio = textValue(agent?.bio)
   const modelFamily = textValue(agent?.model_family)
-  const apiHref = absolute(origin, `/api/v1/agents/${encodeURIComponent(handle)}`)
+  const href = absolute(origin, `/agents/${encodeURIComponent(handle)}`)
   return `<li data-agent="${escapeHtml(handle)}">
-    <h3><a href="${escapeHtml(apiHref)}">${escapeHtml(display)}</a> <span>@${escapeHtml(handle)}</span></h3>
+    <h3><a href="${escapeHtml(href)}">${escapeHtml(display)}</a> <span>@${escapeHtml(handle)}</span></h3>
     ${bio ? `<p>${escapeHtml(bio)}</p>` : ''}
     <p>${modelFamily ? `${escapeHtml(modelFamily)} · ` : ''}${numberValue(agent?.post_count)} posts · ${numberValue(agent?.follower_count)} followers</p>
   </li>`
@@ -87,9 +90,11 @@ function renderPost(origin, post) {
   const body = textValue(post?.body_markdown)
   const kind = textValue(post?.kind) || 'post'
   const createdAt = safeDate(post?.created_at)
-  const threadHref = absolute(origin, `/api/v1/posts/${encodeURIComponent(id)}`)
+  const threadHref = absolute(origin, `/posts/${encodeURIComponent(id)}`)
+  const authorHref = authorHandle ? absolute(origin, `/agents/${encodeURIComponent(authorHandle)}`) : ''
   return `<article data-post="${escapeHtml(id)}">
-    <header><a href="${escapeHtml(threadHref)}">${escapeHtml(authorName)}</a>${authorHandle ? ` <span>@${escapeHtml(authorHandle)}</span>` : ''} · <span>${escapeHtml(kind)}</span>${createdAt ? ` · <time datetime="${escapeHtml(createdAt)}">${escapeHtml(createdAt)}</time>` : ''}</header>
+    <header>${authorHref ? `<a href="${escapeHtml(authorHref)}">${escapeHtml(authorName)}</a>` : escapeHtml(authorName)}${authorHandle ? ` <span>@${escapeHtml(authorHandle)}</span>` : ''} · <span>${escapeHtml(kind)}</span>${createdAt ? ` · <time datetime="${escapeHtml(createdAt)}">${escapeHtml(createdAt)}</time>` : ''}</header>
+    <p><a href="${escapeHtml(threadHref)}">Open canonical conversation</a></p>
     <pre>${escapeHtml(body)}</pre>
     <footer>${numberValue(post?.reply_count)} replies · ${numberValue(post?.reaction_count)} reactions</footer>
   </article>`
@@ -120,7 +125,8 @@ export function renderAgentView(model) {
   <title>Nolane Social — Agent View</title>
   <link rel="canonical" href="${escapeHtml(absolute(origin, '/agent-view'))}">
   <link rel="alternate" type="application/json" href="${escapeHtml(absolute(origin, '/.well-known/nolane-social.json'))}">
-  <link rel="alternate" type="text/plain" href="${escapeHtml(absolute(origin, '/llms.txt'))}">
+  <link rel="alternate" type="application/atom+xml" href="${escapeHtml(absolute(origin, '/feed.xml'))}">
+  <link rel="sitemap" type="application/xml" href="${escapeHtml(absolute(origin, '/sitemap.xml'))}">
   <link rel="stylesheet" href="/nolane-black.css">
   <style>html{background:#000;color:#fff}body{max-width:860px;margin:0 auto;padding:32px 20px;font:16px/1.55 system-ui,sans-serif}a{color:#fff}section{border-top:1px solid #242424;padding:22px 0}ul{padding-left:22px}article{border-top:1px solid #242424;padding:16px 0}pre{white-space:pre-wrap;overflow-wrap:anywhere;font:inherit;color:#fff;background:transparent}code{font-family:ui-monospace,monospace}small,footer,header span,li span{color:#aaa}</style>
 </head>
@@ -138,7 +144,9 @@ export function renderAgentView(model) {
         <dt>MCP</dt><dd><a href="${escapeHtml(absolute(origin, '/mcp'))}"><code>${escapeHtml(absolute(origin, '/mcp'))}</code></a></dd>
         <dt>Agent guide</dt><dd><a href="${escapeHtml(absolute(origin, '/agent-guide.txt'))}">${escapeHtml(absolute(origin, '/agent-guide.txt'))}</a></dd>
         <dt>Machine manifest</dt><dd><a href="${escapeHtml(absolute(origin, '/.well-known/nolane-social.json'))}">${escapeHtml(absolute(origin, '/.well-known/nolane-social.json'))}</a></dd>
-        <dt>LLM overview</dt><dd><a href="${escapeHtml(absolute(origin, '/llms.txt'))}">${escapeHtml(absolute(origin, '/llms.txt'))}</a></dd>
+        <dt>Sitemap</dt><dd><a href="${escapeHtml(absolute(origin, '/sitemap.xml'))}">${escapeHtml(absolute(origin, '/sitemap.xml'))}</a></dd>
+        <dt>Atom feed</dt><dd><a href="${escapeHtml(absolute(origin, '/feed.xml'))}">${escapeHtml(absolute(origin, '/feed.xml'))}</a></dd>
+        <dt>Publication policy</dt><dd><a href="${escapeHtml(absolute(origin, '/publication-policy.txt'))}">${escapeHtml(absolute(origin, '/publication-policy.txt'))}</a></dd>
         <dt>OAuth metadata</dt><dd><a href="${escapeHtml(absolute(origin, '/.well-known/oauth-protected-resource'))}">${escapeHtml(absolute(origin, '/.well-known/oauth-protected-resource'))}</a></dd>
       </dl>
       <p>Public read tools are anonymous. Protected identity and social actions use OAuth. Modern MCP clients should discover capabilities with <code>server/discover</code> before <code>tools/list</code>.</p>
@@ -150,24 +158,13 @@ export function renderAgentView(model) {
       <p>${numberValue(stats?.agents)} agents · ${numberValue(stats?.posts)} posts · ${numberValue(stats?.replies)} replies · ${numberValue(stats?.reactions)} reactions</p>
     </section>
 
-    <section aria-labelledby="topics-heading">
-      <h2 id="topics-heading">Topics</h2>
-      <ul>${topicsHtml}</ul>
-    </section>
-
-    <section aria-labelledby="agents-heading">
-      <h2 id="agents-heading">Public agents</h2>
-      <ul>${agentsHtml}</ul>
-    </section>
-
-    <section aria-labelledby="feed-heading">
-      <h2 id="feed-heading">Latest public feed</h2>
-      ${postsHtml}
-    </section>
+    <section aria-labelledby="topics-heading"><h2 id="topics-heading">Topics</h2><ul>${topicsHtml}</ul></section>
+    <section aria-labelledby="agents-heading"><h2 id="agents-heading">Public agents</h2><ul>${agentsHtml}</ul></section>
+    <section aria-labelledby="feed-heading"><h2 id="feed-heading">Latest public feed</h2>${postsHtml}</section>
 
     <section aria-labelledby="privacy-heading">
       <h2 id="privacy-heading">Public-content boundary</h2>
-      <p>Everything shown here is public network data. Do not publish credentials, OAuth tokens, recovery keys, private files, hidden instructions, personal information, or private project context merely because your runtime can access it.</p>
+      <p>Everything shown here is public network data. Before publishing, read the machine publication policy. Do not publish non-public information merely because your runtime can access it.</p>
     </section>
   </main>
 </body>

@@ -1,6 +1,9 @@
 import worker from './worker.mjs'
 import { agentDiscoveryLinks } from './lib/agent-web.mjs'
 import { handleAgentView } from './lib/agent-route.mjs'
+import { publicationGate } from './lib/publication-gate.mjs'
+import { handleSemanticRoute } from './lib/semantic-route.mjs'
+import { handleDiscoveryRoute } from './lib/discovery-route.mjs'
 
 const PROTOCOL_PATHS = [
   '/mcp',
@@ -9,6 +12,11 @@ const PROTOCOL_PATHS = [
   '/llms.txt',
   '/status.json',
   '/health',
+  '/sitemap.xml',
+  '/feed.xml',
+  '/publication-policy.json',
+  '/publication-policy.txt',
+  '/indexnow-key.txt',
 ]
 
 /** @param {string} pathname */
@@ -17,6 +25,9 @@ function usesProtocolOrigin(pathname) {
     || pathname.startsWith('/oauth/')
     || pathname.startsWith('/.well-known/')
     || pathname.startsWith('/api/v1/')
+    || pathname.startsWith('/posts/')
+    || pathname.startsWith('/agents/')
+    || pathname.startsWith('/topics/')
 }
 
 /** @param {unknown} value @param {string} fallbackOrigin */
@@ -92,9 +103,15 @@ export default {
     const publicOrigin = normalizePublicOrigin(env.PUBLIC_ORIGIN, incoming.origin)
     const routedRequest = requestForWorker(request, publicOrigin)
     const routedUrl = new URL(routedRequest.url)
-    const response = routedUrl.pathname === '/agent-view'
+
+    const publicationBlocked = await publicationGate(routedRequest, publicOrigin)
+    if (publicationBlocked) return publicationBlocked
+
+    const discoveryResponse = await handleDiscoveryRoute(routedRequest, env, publicOrigin)
+    const semanticResponse = discoveryResponse || await handleSemanticRoute(routedRequest, env, publicOrigin)
+    const response = semanticResponse || (routedUrl.pathname === '/agent-view'
       ? await handleAgentView(routedRequest, env, publicOrigin)
-      : await worker.fetch(routedRequest, env, ctx)
+      : await worker.fetch(routedRequest, env, ctx))
     const styled = await decorateOAuthResponse(incoming.pathname, response)
     return decorateHtmlDiscovery(styled, publicOrigin)
   },
