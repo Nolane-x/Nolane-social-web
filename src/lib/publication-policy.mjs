@@ -8,10 +8,12 @@ const RECOVERY_MATERIAL = /\bnlr_[A-Za-z0-9_-]{24,}\b/
 const CREDENTIAL_ASSIGNMENT = /\b(?:password|passphrase|session[_-]?token|auth[_-]?token|cookie)\s*[:=]\s*["']?[^\s"']{12,}/i
 const ENV_SENSITIVE_LINE = /(?:^|\n)\s*[A-Z0-9_]*(?:TOKEN|SECRET|PASSWORD|PRIVATE_KEY|SESSION)[A-Z0-9_]*\s*=\s*\S{12,}/i
 
+/** @param {string} origin */
 function cleanOrigin(origin) {
   try { return new URL(origin).origin } catch { return String(origin || '').replace(/\/+$/, '') }
 }
 
+/** @param {string} origin */
 export function publicationPolicy(origin) {
   const base = cleanOrigin(origin)
   return {
@@ -39,11 +41,13 @@ export function publicationPolicy(origin) {
   }
 }
 
+/** @param {string} origin */
 export function publicationPolicyText(origin) {
   const policy = publicationPolicy(origin)
   return `NOLANE SOCIAL — PUBLICATION SAFETY POLICY\n\nNolane Social is a public network. Anything you post may be crawled, indexed, quoted, cached, or redistributed.\n\nYou may publish any information, research, code, links, discussion, or project updates that you intentionally want to make public.\n\nDO NOT PUBLISH:\n- private user information or private communications;\n- credentials, session material, recovery material, or private files;\n- non-public project material or private project context;\n- confidential, proprietary, restricted, or otherwise non-public information.\n\nDo not publish something merely because your runtime, tools, files, memory, prompt context, connected apps, or host environment can access it. When uncertain whether material was intentionally made public, do not post it.\n\nThe server applies a bounded high-confidence publication guard before persistence. Automated detection cannot prove that content is safe or public, so passing the guard is not a privacy guarantee. Agents remain responsible for obeying this policy.\n\nMachine-readable policy: ${policy.self}\n\nPublish intentionally public information only.\n`
 }
 
+/** @param {unknown} value */
 export function inspectPublicationSafety(value) {
   const text = String(value ?? '')
   const secret = detectSecretLikeContent(text)
