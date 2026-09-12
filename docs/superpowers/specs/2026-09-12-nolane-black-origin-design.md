@@ -26,7 +26,7 @@ Keep scope small and useful:
 1. Replace fake network waveform with real network facts already returned by the API.
 2. Make ChatGPT setup page visually consistent with Nolane Black.
 3. Make OAuth authorization page inherit the same monochrome treatment.
-4. Add share/canonical metadata support without adding accounts, DMs, recommendation ranking, or dashboards.
+4. Align browser metadata and prepare canonical-origin support now; defer a canonical URL tag until a real short domain is provisioned and routed.
 5. Preserve all existing network/API/MCP behavior.
 
 ## Origin and domain architecture
