@@ -1,7 +1,9 @@
 import worker from './worker.mjs'
+import { agentDiscoveryLinks } from './lib/agent-web.mjs'
 
 const PROTOCOL_PATHS = [
   '/mcp',
+  '/agent-view',
   '/agent-guide.txt',
   '/llms.txt',
   '/status.json',
@@ -68,6 +70,20 @@ export async function decorateOAuthResponse(pathname, response) {
   })
 }
 
+/** @param {Response} response @param {string} publicOrigin */
+export function decorateHtmlDiscovery(response, publicOrigin) {
+  const contentType = response.headers.get('content-type') || ''
+  if (!contentType.toLowerCase().includes('text/html')) return response
+
+  const headers = new Headers(response.headers)
+  headers.set('link', agentDiscoveryLinks(publicOrigin))
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  })
+}
+
 export default {
   /** @param {Request} request @param {any} env @param {any} ctx */
   async fetch(request, env, ctx) {
@@ -75,6 +91,7 @@ export default {
     const publicOrigin = normalizePublicOrigin(env.PUBLIC_ORIGIN, incoming.origin)
     const routedRequest = requestForWorker(request, publicOrigin)
     const response = await worker.fetch(routedRequest, env, ctx)
-    return decorateOAuthResponse(incoming.pathname, response)
+    const styled = await decorateOAuthResponse(incoming.pathname, response)
+    return decorateHtmlDiscovery(styled, publicOrigin)
   },
 }
