@@ -1,5 +1,6 @@
 const DIGITAL_SOURCE = 'https://cv.iptc.org/newscodes/digitalsourcetype/TrainedAlgorithmicMedia'
 
+/** @param {unknown} value */
 export function escapeHtml(value) {
   return String(value ?? '')
     .replaceAll('&', '&amp;')
@@ -9,28 +10,34 @@ export function escapeHtml(value) {
     .replaceAll("'", '&#39;')
 }
 
+/** @param {string} origin */
 function cleanOrigin(origin) {
   try { return new URL(origin).origin } catch { return String(origin || '').replace(/\/+$/, '') }
 }
 
+/** @param {string} origin @param {string} path */
 function absolute(origin, path) {
   return `${cleanOrigin(origin)}${path}`
 }
 
+/** @param {any} value */
 function safeJson(value) {
   return JSON.stringify(value).replaceAll('<', '\\u003c')
 }
 
+/** @param {unknown} value */
 function date(value) {
   const parsed = new Date(String(value || ''))
   return Number.isFinite(parsed.getTime()) ? parsed.toISOString() : ''
 }
 
+/** @param {unknown} value @param {number} [limit] */
 function excerpt(value, limit = 180) {
   const text = String(value || '').replace(/\s+/g, ' ').trim()
   return text.length > limit ? `${text.slice(0, limit - 1)}…` : text
 }
 
+/** @param {{title:string,description:string,canonical:string,jsonLd:any,body:string}} model */
 function shell({ title, description, canonical, jsonLd, body }) {
   return `<!doctype html>
 <html lang="en">
@@ -51,6 +58,7 @@ function shell({ title, description, canonical, jsonLd, body }) {
 </html>`
 }
 
+/** @param {string} origin @param {any} author */
 function authorLink(origin, author) {
   const handle = String(author?.handle || '').trim()
   const label = String(author?.display_name || handle || 'Unknown agent')
@@ -58,11 +66,13 @@ function authorLink(origin, author) {
   return `<a href="${escapeHtml(absolute(origin, `/agents/${encodeURIComponent(handle)}`))}">${escapeHtml(label)}</a> <span>@${escapeHtml(handle)}</span>`
 }
 
+/** @param {string} origin @param {any[]} tags */
 function topicLinks(origin, tags) {
   if (!Array.isArray(tags) || tags.length === 0) return ''
-  return `<p>Topics: ${tags.slice(0, 5).map((tag) => `<a href="${escapeHtml(absolute(origin, `/topics/${encodeURIComponent(tag)}`))}">#${escapeHtml(tag)}</a>`).join(' ')}</p>`
+  return `<p>Topics: ${tags.slice(0, 5).map((tag) => `<a href="${escapeHtml(absolute(origin, `/topics/${encodeURIComponent(String(tag))}`))}">#${escapeHtml(tag)}</a>`).join(' ')}</p>`
 }
 
+/** @param {string} origin @param {any} post @param {{heading?:string}} [options] */
 function postCard(origin, post, { heading = 'h2' } = {}) {
   const id = String(post?.id || '')
   const created = date(post?.created_at)
@@ -72,11 +82,12 @@ function postCard(origin, post, { heading = 'h2' } = {}) {
 <${heading}><a href="${escapeHtml(href)}">${escapeHtml(title)}</a></${heading}>
 <p>${authorLink(origin, post?.author)}${created ? ` · <time datetime="${escapeHtml(created)}">${escapeHtml(created)}</time>` : ''}</p>
 <pre>${escapeHtml(post?.body_markdown || '')}</pre>
-${topicLinks(origin, post?.tags)}
+${topicLinks(origin, Array.isArray(post?.tags) ? post.tags : [])}
 <p>${Number(post?.reply_count || 0)} replies · ${Number(post?.reaction_count || 0)} reactions</p>
 </article>`
 }
 
+/** @param {{origin:string,thread:any}} model */
 export function renderPostPage({ origin, thread }) {
   const post = thread?.target || thread?.root
   if (!post?.id) return ''
@@ -97,7 +108,7 @@ export function renderPostPage({ origin, thread }) {
       ...(handle ? { url: absolute(origin, `/agents/${encodeURIComponent(handle)}`) } : {}),
     },
   }
-  const items = Array.isArray(thread?.items) ? thread.items : [post]
+  const items = Array.isArray(thread?.items) ? /** @type {any[]} */ (thread.items) : [post]
   return shell({
     title: `${excerpt(post.body_markdown, 70) || 'Post'} — Nolane Social`,
     description: excerpt(post.body_markdown),
@@ -109,6 +120,7 @@ ${items.slice(0, 100).map((item) => postCard(origin, item, { heading: 'h2' })).j
   })
 }
 
+/** @param {{origin:string,agent:any,posts?:any[]}} model */
 export function renderAgentPage({ origin, agent, posts = [] }) {
   if (!agent?.handle) return ''
   const canonical = absolute(origin, `/agents/${encodeURIComponent(agent.handle)}`)
@@ -138,6 +150,7 @@ export function renderAgentPage({ origin, agent, posts = [] }) {
   })
 }
 
+/** @param {{origin:string,tag:string,posts?:any[]}} model */
 export function renderTopicPage({ origin, tag, posts = [] }) {
   const normalized = String(tag || '').replace(/^#+/, '').trim().toLowerCase()
   const canonical = absolute(origin, `/topics/${encodeURIComponent(normalized)}`)
