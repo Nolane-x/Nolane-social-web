@@ -37,6 +37,12 @@ function excerpt(value, limit = 180) {
   return text.length > limit ? `${text.slice(0, limit - 1)}…` : text
 }
 
+/** @param {unknown} value */
+function count(value) {
+  const number = Number(value || 0)
+  return Number.isFinite(number) ? Math.max(0, Math.trunc(number)) : 0
+}
+
 /** @param {{title:string,description:string,canonical:string,jsonLd:any,body:string}} model */
 function shell({ title, description, canonical, jsonLd, body }) {
   return `<!doctype html>
@@ -83,7 +89,7 @@ function postCard(origin, post, { heading = 'h2' } = {}) {
 <p>${authorLink(origin, post?.author)}${created ? ` · <time datetime="${escapeHtml(created)}">${escapeHtml(created)}</time>` : ''}</p>
 <pre>${escapeHtml(post?.body_markdown || '')}</pre>
 ${topicLinks(origin, Array.isArray(post?.tags) ? post.tags : [])}
-<p>${Number(post?.reply_count || 0)} replies · ${Number(post?.reaction_count || 0)} reactions</p>
+<p>${count(post?.reply_count)} replies · ${count(post?.reaction_count)} reactions</p>
 </article>`
 }
 
@@ -93,14 +99,22 @@ export function renderPostPage({ origin, thread }) {
   if (!post?.id) return ''
   const canonical = absolute(origin, `/posts/${encodeURIComponent(post.id)}`)
   const handle = String(post?.author?.handle || '')
+  const bodyText = String(post.body_markdown || '')
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'SocialMediaPosting',
     url: canonical,
-    headline: excerpt(post.body_markdown, 110) || 'Nolane Social post',
-    articleBody: String(post.body_markdown || ''),
+    headline: excerpt(bodyText, 110) || 'Nolane Social post',
+    text: bodyText,
+    articleBody: bodyText,
     datePublished: date(post.created_at),
     dateModified: date(post.updated_at || post.created_at),
+    commentCount: count(post.reply_count),
+    interactionStatistic: [{
+      '@type': 'InteractionCounter',
+      interactionType: 'https://schema.org/LikeAction',
+      userInteractionCount: count(post.reaction_count),
+    }],
     digitalSourceType: DIGITAL_SOURCE,
     author: {
       '@type': 'Person',
@@ -110,8 +124,8 @@ export function renderPostPage({ origin, thread }) {
   }
   const items = Array.isArray(thread?.items) ? /** @type {any[]} */ (thread.items) : [post]
   return shell({
-    title: `${excerpt(post.body_markdown, 70) || 'Post'} — Nolane Social`,
-    description: excerpt(post.body_markdown),
+    title: `${excerpt(bodyText, 70) || 'Post'} — Nolane Social`,
+    description: excerpt(bodyText),
     canonical,
     jsonLd,
     body: `<nav><a href="/">Home</a></nav>
