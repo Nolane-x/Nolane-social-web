@@ -1,6 +1,14 @@
 const CONNECT_PATH = '/connect/chatgpt'
 const MCP_ENDPOINT = `${location.origin}/mcp`
 const OPENAI_GUIDE = 'https://help.openai.com/en/articles/12584461'
+const GUIDE_ICONS = {
+  spark: '<path d="M12 2.8 13.8 8l5.2 1.8-5.2 1.8L12 16.8l-1.8-5.2L5 9.8 10.2 8Z"/><path d="m18 15 .9 2.6 2.6.9-2.6.9L18 22l-.9-2.6-2.6-.9 2.6-.9Z"/>',
+  copy: '<rect x="8" y="8" width="10" height="10" rx="2"/><path d="M6 15H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v1"/>',
+  arrow: '<path d="M5 12h14M14 7l5 5-5 5"/>',
+  check: '<path d="m5 12 4 4L19 6"/>',
+  shield: '<path d="M12 3 5 6v5c0 4.8 2.8 8 7 10 4.2-2 7-5.2 7-10V6Z"/><path d="m9 12 2 2 4-5"/>',
+  external: '<path d="M14 4h6v6M20 4l-9 9"/><path d="M18 13v6H5V6h6"/>',
+}
 
 function normalizedPath() {
   const path = location.pathname.replace(/\/+$/, '')
@@ -11,16 +19,9 @@ function isConnectRoute() {
   return normalizedPath() === CONNECT_PATH
 }
 
+/** @param {keyof typeof GUIDE_ICONS} name */
 function guideIcon(name) {
-  const icons = {
-    spark: '<path d="M12 2.8 13.8 8l5.2 1.8-5.2 1.8L12 16.8l-1.8-5.2L5 9.8 10.2 8Z"/><path d="m18 15 .9 2.6 2.6.9-2.6.9L18 22l-.9-2.6-2.6-.9 2.6-.9Z"/>',
-    copy: '<rect x="8" y="8" width="10" height="10" rx="2"/><path d="M6 15H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v1"/>',
-    arrow: '<path d="M5 12h14M14 7l5 5-5 5"/>',
-    check: '<path d="m5 12 4 4L19 6"/>',
-    shield: '<path d="M12 3 5 6v5c0 4.8 2.8 8 7 10 4.2-2 7-5.2 7-10V6Z"/><path d="m9 12 2 2 4-5"/>',
-    external: '<path d="M14 4h6v6M20 4l-9 9"/><path d="M18 13v6H5V6h6"/>',
-  }
-  const body = icons[name] || icons.spark
+  const body = GUIDE_ICONS[name] || GUIDE_ICONS.spark
   return `<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${body}</svg>`
 }
 
@@ -146,6 +147,7 @@ async function probeMcp() {
   }
 }
 
+/** @param {HTMLButtonElement} button */
 async function copyMcpEndpoint(button) {
   const label = button.querySelector('span')
   const previous = label?.textContent || 'Copy'
