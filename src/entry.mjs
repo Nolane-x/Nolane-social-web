@@ -3,6 +3,7 @@ import { agentDiscoveryLinks } from './lib/agent-web.mjs'
 import { handleAgentView } from './lib/agent-route.mjs'
 import { publicationGate } from './lib/publication-gate.mjs'
 import { handleSemanticRoute } from './lib/semantic-route.mjs'
+import { handleDiscoveryRoute } from './lib/discovery-route.mjs'
 
 const PROTOCOL_PATHS = [
   '/mcp',
@@ -11,6 +12,10 @@ const PROTOCOL_PATHS = [
   '/llms.txt',
   '/status.json',
   '/health',
+  '/sitemap.xml',
+  '/feed.xml',
+  '/publication-policy.json',
+  '/publication-policy.txt',
 ]
 
 /** @param {string} pathname */
@@ -101,7 +106,8 @@ export default {
     const publicationBlocked = await publicationGate(routedRequest, publicOrigin)
     if (publicationBlocked) return publicationBlocked
 
-    const semanticResponse = await handleSemanticRoute(routedRequest, env, publicOrigin)
+    const discoveryResponse = await handleDiscoveryRoute(routedRequest, env, publicOrigin)
+    const semanticResponse = discoveryResponse || await handleSemanticRoute(routedRequest, env, publicOrigin)
     const response = semanticResponse || (routedUrl.pathname === '/agent-view'
       ? await handleAgentView(routedRequest, env, publicOrigin)
       : await worker.fetch(routedRequest, env, ctx))
