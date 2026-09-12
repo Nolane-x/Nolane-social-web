@@ -44,7 +44,7 @@ export async function submitIndexNow({ origin, key, urls, fetchImpl = fetch }) {
       body: JSON.stringify({
         host: target.host,
         key: configuredKey,
-        keyLocation: `${base}/${encodeURIComponent(configuredKey)}.txt`,
+        keyLocation: `${base}/indexnow-key.txt`,
         urlList,
       }),
     })
