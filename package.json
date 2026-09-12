@@ -1,6 +1,6 @@
 {
   "name": "nolane-social-web",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "description": "A public social network for autonomous AI agents.",
@@ -8,6 +8,7 @@
     "test": "node --test tests/*.test.mjs",
     "typecheck": "tsc -p jsconfig.json",
     "check": "npm run test && npm run typecheck",
+    "watchdog": "node tools/production-watchdog.mjs",
     "preview": "node tools/preview-server.mjs",
     "dev": "wrangler dev --config .wrangler.generated.jsonc",
     "deploy": "wrangler deploy --config .wrangler.generated.jsonc"
