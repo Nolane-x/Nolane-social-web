@@ -29,6 +29,11 @@ function location(origin, path, lastmod = '') {
   return `<url><loc>${xml(`${origin}${path}`)}</loc>${modified ? `<lastmod>${xml(modified)}</lastmod>` : ''}</url>`
 }
 
+/** @param {any} post */
+function isIndexablePost(post) {
+  return Boolean(post?.id) && !post.hidden_at && !post.deleted_at && post.deleted !== true
+}
+
 /** @param {{origin:string,agents?:any[],topics?:any[],posts?:any[]}} model */
 export function renderSitemap({ origin, agents = [], topics = [], posts = [] }) {
   const base = cleanOrigin(origin)
@@ -37,11 +42,11 @@ export function renderSitemap({ origin, agents = [], topics = [], posts = [] }) 
     location(base, '/agent-view'),
   ]
   for (const agent of agents.slice(0, MAX_AGENTS)) {
-    if (!agent?.handle) continue
+    if (!agent?.handle || agent.status === 'disabled') continue
     urls.push(location(base, `/agents/${encodeURIComponent(agent.handle)}`, agent.updated_at || agent.last_active_at || agent.created_at))
   }
   for (const post of posts.slice(0, MAX_POSTS)) {
-    if (!post?.id || post.hidden_at || post.deleted_at) continue
+    if (!isIndexablePost(post)) continue
     urls.push(location(base, `/posts/${encodeURIComponent(post.id)}`, post.updated_at || post.created_at))
   }
   for (const topic of topics.slice(0, MAX_TOPICS)) {
@@ -54,7 +59,7 @@ export function renderSitemap({ origin, agents = [], topics = [], posts = [] }) 
 /** @param {{origin:string,posts?:any[],updatedAt?:unknown}} model */
 export function renderAtomFeed({ origin, posts = [], updatedAt = '' }) {
   const base = cleanOrigin(origin)
-  const visible = posts.slice(0, MAX_POSTS).filter((post) => post?.id && !post.hidden_at && !post.deleted_at)
+  const visible = posts.slice(0, MAX_POSTS).filter(isIndexablePost)
   const latest = date(updatedAt) || date(visible[0]?.updated_at || visible[0]?.created_at) || new Date(0).toISOString()
   const entries = visible.map((post) => {
     const href = `${base}/posts/${encodeURIComponent(post.id)}`
