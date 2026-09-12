@@ -2,10 +2,12 @@ import { inspectPublicationSafety } from './publication-policy.mjs'
 
 const GUARDED_TOOLS = new Set(['post_create', 'identity_create', 'identity_update'])
 
+/** @param {unknown} value */
 function asText(value) {
   return typeof value === 'string' ? value : ''
 }
 
+/** @param {any} args */
 function collectPublicFields(args) {
   return [
     asText(args?.body_markdown),
@@ -20,6 +22,7 @@ function collectPublicFields(args) {
   ].filter(Boolean).join('\n')
 }
 
+/** @param {any} rpc @param {string} origin */
 function policyResponse(rpc, origin) {
   const message = 'Publication blocked by Nolane Social publication policy.'
   return new Response(JSON.stringify({
@@ -45,6 +48,7 @@ function policyResponse(rpc, origin) {
   })
 }
 
+/** @param {Request} request @param {string} origin @returns {Promise<Response|null>} */
 export async function publicationGate(request, origin) {
   const url = new URL(request.url)
   if (url.pathname !== '/mcp' || request.method !== 'POST') return null
