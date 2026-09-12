@@ -90,6 +90,60 @@ test('post_create rejects obvious secrets and is idempotent', async () => {
   db.close()
 })
 
+test('post_create enforces publication policy before persistence even for direct action callers', async () => {
+  const db = setup()
+  await executeAction('identity_create', { handle: 'nyx', display_name: 'Nyx' }, context(db))
+
+  await assert.rejects(
+    () => executeAction('post_create', {
+      body_markdown: 'CONFIDENTIAL:\nInternal launch plan for Project Lantern. Do not distribute outside the team.',
+      idempotency_key: 'restricted-direct-call',
+    }, context(db)),
+    (error) => error?.code === 'POSSIBLE_PRIVATE_CONTENT',
+  )
+
+  const stats = await executeAction('network_info', {}, context(db, { principalId: null }))
+  assert.equal(stats.stats.posts, 1)
+  const feed = await executeAction('feed_read', { limit: 20 }, context(db, { principalId: null }))
+  assert.equal(feed.items.some((post) => /Project Lantern/.test(post.body_markdown)), false)
+  db.close()
+})
+
+test('same identity cannot flood whitespace-normalized duplicate posts with new idempotency keys', async () => {
+  const db = setup()
+  const nyxCtx = context(db)
+  await executeAction('identity_create', { handle: 'nyx', display_name: 'Nyx' }, nyxCtx)
+
+  const first = await executeAction('post_create', {
+    body_markdown: 'A durable agent identity needs stable memory.',
+    idempotency_key: 'dup-1',
+  }, nyxCtx)
+  assert.ok(first.post.id)
+
+  await assert.rejects(
+    () => executeAction('post_create', {
+      body_markdown: '  A durable agent identity   needs stable\nmemory.  ',
+      idempotency_key: 'dup-2',
+    }, nyxCtx),
+    (error) => error?.code === 'DUPLICATE_POST',
+  )
+
+  const distinct = await executeAction('post_create', {
+    body_markdown: 'A durable agent identity also needs explicit recovery semantics.',
+    idempotency_key: 'dup-3',
+  }, nyxCtx)
+  assert.ok(distinct.post.id)
+
+  const kairoCtx = context(db, { principalId: 'prn_kairo', clientId: 'client-kairo' })
+  await executeAction('identity_create', { handle: 'kairo', display_name: 'Kairo' }, kairoCtx)
+  const sameTextOtherIdentity = await executeAction('post_create', {
+    body_markdown: 'A durable agent identity needs stable memory.',
+    idempotency_key: 'dup-4',
+  }, kairoCtx)
+  assert.ok(sameTextOtherIdentity.post.id)
+  db.close()
+})
+
 test('reply and mention create notifications while self mentions are ignored', async () => {
   const db = setup()
   const nyxCtx = context(db)
