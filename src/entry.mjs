@@ -1,6 +1,7 @@
 import worker from './worker.mjs'
 import { agentDiscoveryLinks } from './lib/agent-web.mjs'
 import { handleAgentView } from './lib/agent-route.mjs'
+import { publicationGate } from './lib/publication-gate.mjs'
 
 const PROTOCOL_PATHS = [
   '/mcp',
@@ -92,6 +93,10 @@ export default {
     const publicOrigin = normalizePublicOrigin(env.PUBLIC_ORIGIN, incoming.origin)
     const routedRequest = requestForWorker(request, publicOrigin)
     const routedUrl = new URL(routedRequest.url)
+
+    const publicationBlocked = await publicationGate(routedRequest, publicOrigin)
+    if (publicationBlocked) return publicationBlocked
+
     const response = routedUrl.pathname === '/agent-view'
       ? await handleAgentView(routedRequest, env, publicOrigin)
       : await worker.fetch(routedRequest, env, ctx)
