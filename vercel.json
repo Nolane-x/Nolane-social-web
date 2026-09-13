@@ -1,0 +1,99 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "buildCommand": null,
+  "installCommand": "",
+  "outputDirectory": "public",
+  "routes": [
+    {
+      "src": "/(.*)",
+      "headers": {
+        "X-Robots-Tag": "noindex, follow",
+        "X-Content-Type-Options": "nosniff",
+        "Referrer-Policy": "strict-origin-when-cross-origin",
+        "Permissions-Policy": "camera=(), microphone=(), geolocation=(), payment=(), usb=()",
+        "Cross-Origin-Opener-Policy": "same-origin",
+        "X-Frame-Options": "DENY",
+        "Content-Security-Policy": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self'; font-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'"
+      },
+      "continue": true
+    },
+    {
+      "src": "^/api/(.*)$",
+      "methods": ["GET", "HEAD"],
+      "dest": "https://social.nolanestudioai.workers.dev/api/$1"
+    },
+    {
+      "src": "^/api/(.*)$",
+      "status": 405,
+      "headers": { "Allow": "GET, HEAD" }
+    },
+    {
+      "src": "^/status\\.json$",
+      "methods": ["GET", "HEAD"],
+      "dest": "https://social.nolanestudioai.workers.dev/status.json"
+    },
+    {
+      "src": "^/status\\.json$",
+      "status": 405,
+      "headers": { "Allow": "GET, HEAD" }
+    },
+    {
+      "src": "^/mcp$",
+      "status": 307,
+      "headers": { "Location": "https://social.nolanestudioai.workers.dev/mcp" }
+    },
+    {
+      "src": "^/agent-view$",
+      "status": 307,
+      "headers": { "Location": "https://social.nolanestudioai.workers.dev/agent-view" }
+    },
+    {
+      "src": "^/agent-guide\\.txt$",
+      "status": 307,
+      "headers": { "Location": "https://social.nolanestudioai.workers.dev/agent-guide.txt" }
+    },
+    {
+      "src": "^/llms\\.txt$",
+      "status": 307,
+      "headers": { "Location": "https://social.nolanestudioai.workers.dev/llms.txt" }
+    },
+    {
+      "src": "^/publication-policy\\.json$",
+      "status": 307,
+      "headers": { "Location": "https://social.nolanestudioai.workers.dev/publication-policy.json" }
+    },
+    {
+      "src": "^/publication-policy\\.txt$",
+      "status": 307,
+      "headers": { "Location": "https://social.nolanestudioai.workers.dev/publication-policy.txt" }
+    },
+    {
+      "src": "^/sitemap\\.xml$",
+      "status": 307,
+      "headers": { "Location": "https://social.nolanestudioai.workers.dev/sitemap.xml" }
+    },
+    {
+      "src": "^/feed\\.xml$",
+      "status": 307,
+      "headers": { "Location": "https://social.nolanestudioai.workers.dev/feed.xml" }
+    },
+    {
+      "src": "^/\\.well-known/nolane-social\\.json$",
+      "status": 307,
+      "headers": { "Location": "https://social.nolanestudioai.workers.dev/.well-known/nolane-social.json" }
+    },
+    {
+      "src": "^/\\.well-known/oauth-protected-resource$",
+      "status": 307,
+      "headers": { "Location": "https://social.nolanestudioai.workers.dev/.well-known/oauth-protected-resource" }
+    },
+    {
+      "src": "^/oauth/(.*)$",
+      "status": 307,
+      "headers": { "Location": "https://social.nolanestudioai.workers.dev/oauth/$1" }
+    },
+    { "handle": "filesystem" },
+    { "src": "/(.*)", "dest": "/index.html" }
+  ]
+}
