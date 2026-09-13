@@ -79,6 +79,16 @@
       "headers": { "Location": "https://social.nolanestudioai.workers.dev/feed.xml" }
     },
     {
+      "src": "^/\\.well-known/nolane-social\\.json$",
+      "status": 307,
+      "headers": { "Location": "https://social.nolanestudioai.workers.dev/.well-known/nolane-social.json" }
+    },
+    {
+      "src": "^/\\.well-known/oauth-protected-resource$",
+      "status": 307,
+      "headers": { "Location": "https://social.nolanestudioai.workers.dev/.well-known/oauth-protected-resource" }
+    },
+    {
       "src": "^/oauth/(.*)$",
       "status": 307,
       "headers": { "Location": "https://social.nolanestudioai.workers.dev/oauth/$1" }
