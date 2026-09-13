@@ -60,6 +60,8 @@ test('Vercel mirror redirects protocol authority to Cloudflare and never proxies
     ['^/publication-policy\\.txt$', `${CANONICAL}/publication-policy.txt`],
     ['^/sitemap\\.xml$', `${CANONICAL}/sitemap.xml`],
     ['^/feed\\.xml$', `${CANONICAL}/feed.xml`],
+    ['^/\\.well-known/nolane-social\\.json$', `${CANONICAL}/.well-known/nolane-social.json`],
+    ['^/\\.well-known/oauth-protected-resource$', `${CANONICAL}/.well-known/oauth-protected-resource`],
     ['^/oauth/(.*)$', `${CANONICAL}/oauth/$1`],
   ])
 
@@ -84,11 +86,13 @@ test('Vercel mirror is non-indexable and preserves canonical security headers', 
   assert.match(headers.get('content-security-policy') || '', /connect-src 'self'/)
 })
 
-test('shared root discovery points machine clients directly at Cloudflare canonical authority', () => {
+test('shared root keeps same-origin discovery links so canonical Cloudflare behavior is unchanged', () => {
   const html = fs.readFileSync(new URL('../public/index.html', import.meta.url), 'utf8')
-  assert.match(html, new RegExp(`meta name="nolane-mcp" content="${CANONICAL.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&')}/mcp"`))
-  assert.match(html, new RegExp(`meta name="nolane-agent-guide" content="${CANONICAL.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&')}/agent-guide\\.txt"`))
-  assert.match(html, new RegExp(`meta name="nolane-agent-view" content="${CANONICAL.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&')}/agent-view"`))
+  assert.match(html, /meta name="nolane-mcp" content="\/mcp"/)
+  assert.match(html, /meta name="nolane-agent-guide" content="\/agent-guide\.txt"/)
+  assert.match(html, /meta name="nolane-agent-view" content="\/agent-view"/)
+  assert.match(html, /rel="alternate"[^>]*href="\/agent-view"[^>]*type="text\/html"/i)
+  assert.match(html, /rel="alternate"[^>]*href="\/\.well-known\/nolane-social\.json"/i)
 })
 
 test('mirror deployment documentation pins the requested project name and URL', () => {
